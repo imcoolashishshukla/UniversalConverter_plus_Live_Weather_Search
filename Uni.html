@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Universal Converter & Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --fg: #222;
+      --card: #fff;
+      --accent: #007bff;
+    }
+    [data-theme="dark"] {
+      --bg: #121212;
+      --fg: #eee;
+      --card: #1e1e1e;
+      --accent: #4da3ff;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: var(--card);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+    }
+    .tab {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+    .tab.active { background: #444; }
+    .theme-toggle {
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--fg);
+      background: none;
+      color: var(--fg);
+    }
+    .container {
+      padding: 20px;
+      display: none;
+    }
+    .container.active { display: block; }
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: auto;
+    }
+    select, input, button {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="tabs">
+      <button class="tab active" data-tab="universal">Universal</button>
+      <button class="tab" data-tab="currency">Currency</button>
+      <button class="tab" data-tab="crypto">Crypto</button>
+      <button class="tab" data-tab="weather">Weather</button>
+    </div>
+    <button class="theme-toggle">🌙</button>
+  </header>
+
+  <!-- Universal Converter -->
+  <div class="container active" id="universal">
+    <div class="card">
+      <h2>Universal Converter</h2>
+      <label>Category</label>
+      <select id="category">
+        <option value="length">Length</option>
+        <option value="weight">Weight</option>
+        <option value="temperature">Temperature</option>
+        <option value="speed">Speed</option>
+        <option value="area">Area</option>
+        <option value="volume">Volume</option>
+        <option value="time">Time</option>
+        <option value="storage">Storage</option>
+      </select>
+      <label>From</label>
+      <select id="fromUnit"></select>
+      <label>To</label>
+      <select id="toUnit"></select>
+      <label>Value</label>
+      <input type="number" id="uniValue" placeholder="Enter value">
+      <button onclick="convertUniversal()">Convert</button>
+      <div class="result" id="uniResult"></div>
+    </div>
+  </div>
+
+  <!-- Currency Converter -->
+  <div class="container" id="currency">
+    <div class="card">
+      <h2>Currency Converter</h2>
+      <label>From Currency</label>
+      <select id="fromCurrency"></select>
+      <label>To Currency</label>
+      <select id="toCurrency"></select>
+      <label>Amount</label>
+      <input type="number" id="currencyAmount" placeholder="Enter amount">
+      <button onclick="convertCurrency()">Convert</button>
+      <div class="result" id="currencyResult"></div>
+    </div>
+  </div>
+
+  <!-- Crypto Converter -->
+  <div class="container" id="crypto">
+    <div class="card">
+      <h2>Crypto Converter</h2>
+      <label>From Crypto</label>
+      <select id="fromCrypto"></select>
+      <label>To Crypto</label>
+      <select id="toCrypto"></select>
+      <label>Amount</label>
+      <input type="number" id="cryptoAmount" placeholder="Enter amount">
+      <button onclick="convertCrypto()">Convert</button>
+      <div class="result" id="cryptoResult"></div>
+    </div>
+  </div>
+
+  <!-- Weather -->
+  <div class="container" id="weather">
+    <div class="card">
+      <h2>Weather</h2>
+      <label>City</label>
+      <input type="text" id="cityInput" placeholder="Enter city name">
+      <button onclick="getWeather()">Get Weather</button>
+      <div class="result" id="weatherResult"></div>
+    </div>
+  </div>
+
+<script>
+/* --- Tabs --- */
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.container').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  };
+});
+
+/* --- Theme Toggle --- */
+document.querySelector('.theme-toggle').onclick=()=>{
+  if(document.body.getAttribute('data-theme')==="dark"){
+    document.body.removeAttribute('data-theme');
+  } else {
+    document.body.setAttribute('data-theme','dark');
+  }
+};
+
+/* --- Universal Converter --- */
+const units = {
+  length: { m:1, km:1000, cm:0.01, mm:0.001, in:0.0254, ft:0.3048, yd:0.9144, mi:1609.34 },
+  weight: { kg:1, g:0.001, mg:1e-6, lb:0.453592, oz:0.0283495, ton:1000 },
+  temperature: { C:'C', F:'F', K:'K' },
+  speed: { "m/s":1, "km/h":0.277778, "mph":0.44704, "knot":0.514444 },
+  area: { "m²":1, "cm²":0.0001, "ft²":0.092903, "acre":4046.86, "hectare":10000 },
+  volume: { L:1, mL:0.001, "m³":1000, "ft³":28.3168, gal:3.78541 },
+  time: { s:1, min:60, h:3600, day:86400, week:604800 },
+  storage: { B:1, KB:1024, MB:1048576, GB:1073741824, TB:1099511627776 }
+};
+function loadUnits() {
+  let cat=document.getElementById('category').value;
+  let from=document.getElementById('fromUnit'), to=document.getElementById('toUnit');
+  from.innerHTML=""; to.innerHTML="";
+  Object.keys(units[cat]).forEach(u=>{
+    from.add(new Option(u,u));
+    to.add(new Option(u,u));
+  });
+}
+loadUnits();
+document.getElementById('category').onchange=loadUnits;
+
+function convertUniversal(){
+  let cat=document.getElementById('category').value;
+  let from=document.getElementById('fromUnit').value;
+  let to=document.getElementById('toUnit').value;
+  let val=parseFloat(document.getElementById('uniValue').value);
+  if(isNaN(val)) return;
+  let res;
+  if(cat==='temperature'){
+    if(from==='C'&&to==='F') res=val*9/5+32;
+    else if(from==='F'&&to==='C') res=(val-32)*5/9;
+    else if(from==='C'&&to==='K') res=val+273.15;
+    else if(from==='K'&&to==='C') res=val-273.15;
+    else if(from==='F'&&to==='K') res=(val-32)*5/9+273.15;
+    else if(from==='K'&&to==='F') res=(val-273.15)*9/5+32;
+    else res=val;
+  } else {
+    res=val*units[cat][from]/units[cat][to];
+  }
+  document.getElementById('uniResult').innerText=`${val} ${from} = ${res} ${to}`;
+}
+
+/* --- Currency Converter --- */
+async function loadCurrencies(){
+  let data=await fetch("https://open.er-api.com/v6/latest/USD").then(r=>r.json());
+  let codes=Object.keys(data.rates);
+  let from=document.getElementById('fromCurrency'), to=document.getElementById('toCurrency');
+  codes.forEach(c=>{
+    from.add(new Option(c,c));
+    to.add(new Option(c,c));
+  });
+  from.value="USD"; to.value="INR";
+}
+loadCurrencies();
+
+async function convertCurrency(){
+  let amt=parseFloat(document.getElementById('currencyAmount').value);
+  let from=document.getElementById('fromCurrency').value;
+  let to=document.getElementById('toCurrency').value;
+  if(isNaN(amt)) return;
+  let data=await fetch(`https://open.er-api.com/v6/latest/${from}`).then(r=>r.json());
+  let rate=data.rates[to];
+  let res=amt*rate;
+  document.getElementById('currencyResult').innerText=`${amt} ${from} = ${res.toFixed(2)} ${to}`;
+}
+
+/* --- Crypto Converter --- */
+const cryptos=["bitcoin","ethereum","tether","bnb","solana","ripple","dogecoin","cardano","tron","litecoin"];
+cryptos.forEach(c=>{
+  document.getElementById('fromCrypto').add(new Option(c,c));
+  document.getElementById('toCrypto').add(new Option(c,c));
+});
+document.getElementById('fromCrypto').value="bitcoin";
+document.getElementById('toCrypto').value="ethereum";
+
+async function convertCrypto(){
+  let amt=parseFloat(document.getElementById('cryptoAmount').value);
+  let from=document.getElementById('fromCrypto').value;
+  let to=document.getElementById('toCrypto').value;
+  if(isNaN(amt)) return;
+  let data=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${from},${to}&vs_currencies=usd`).then(r=>r.json());
+  let res=amt*data[from].usd/data[to].usd;
+  document.getElementById('cryptoResult').innerText=`${amt} ${from} = ${res.toFixed(6)} ${to}`;
+}
+
+/* --- Weather --- */
+async function getWeather(){
+  let city=document.getElementById('cityInput').value.trim();
+  if(!city) return;
+  let res=await fetch(`https://wttr.in/${city}?format=j1`).then(r=>r.json());
+  let temp=res.current_condition[0].temp_C;
+  let desc=res.current_condition[0].weatherDesc[0].value;
+  document.getElementById('weatherResult').innerText=`Current weather in ${city}: ${temp}°C, ${desc}`;
+}
+</script>
+</body>
+</html>
